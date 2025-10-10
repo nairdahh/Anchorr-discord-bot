@@ -1,0 +1,11 @@
+services:
+  anchorr-bot:
+    build: .
+    container_name: anchorr-bot
+    restart: unless-stopped
+    env_file: .env
+    # ports:
+    #  - "8282:8282"
+    volumes:
+      - ./data:/app/data
+    stop_grace_period: 1m

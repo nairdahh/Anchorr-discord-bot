@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Anchorr - Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      #webhook-section {
+        display: none;
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background-color: var(--background);
+        border: 1px solid var(--code-bg);
+        border-radius: 8px;
+      }
+      #webhook-url {
+        background-color: var(--code-bg);
+        padding: 0.5rem;
+        border-radius: 4px;
+        word-wrap: break-word;
+        margin-bottom: 1rem;
+      }
+      .webhook-buttons {
+        display: flex;
+        gap: 1rem;
+      }
+      .color-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container dashboard">
+      <h1 id="guild-name">Loading...</h1>
+      <form id="config-form">
+        <h2>Jellyseerr Settings</h2>
+        <label for="jellyseer_url">Jellyseerr URL (with /api/v1)</label>
+        <input type="text" id="jellyseer_url" name="jellyseer_url" required />
+        <label for="jellyseer_api_key">Jellyseerr API Key</label>
+        <input
+          type="password"
+          id="jellyseer_api_key"
+          name="jellyseer_api_key"
+          required
+        />
+
+        <h2>Jellyfin Notifications</h2>
+        <label for="jellyfin_server_url">Public Jellyfin URL</label>
+        <input
+          type="text"
+          id="jellyfin_server_url"
+          name="jellyfin_server_url"
+        />
+        <label for="notification_channel_id">Notification Channel ID</label>
+        <input
+          type="text"
+          id="notification_channel_id"
+          name="notification_channel_id"
+        />
+
+        <h2>Appearance & Behavior</h2>
+        <label for="ephemeral_responses" class="checkbox-label">
+          <input
+            type="checkbox"
+            id="ephemeral_responses"
+            name="ephemeral_responses"
+          />
+          Make command responses visible only to me (ephemeral)
+        </label>
+        <div class="color-grid">
+          <div>
+            <label for="color_search">Search Color</label>
+            <input
+              type="color"
+              id="color_search"
+              name="color_search"
+              value="#ef9f76"
+            />
+          </div>
+          <div>
+            <label for="color_success">Success Color</label>
+            <input
+              type="color"
+              id="color_success"
+              name="color_success"
+              value="#a6d189"
+            />
+          </div>
+          <div>
+            <label for="color_notification">Notification Color</label>
+            <input
+              type="color"
+              id="color_notification"
+              name="color_notification"
+              value="#cba6f7"
+            />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          Save Configuration
+        </button>
+      </form>
+      <p id="save-status"></p>
+
+      <div id="webhook-section">
+        <h3>Your Jellyfin Webhook URL</h3>
+        <p>
+          To receive notifications, add the following URL to your Jellyfin
+          Webhooks plugin:
+        </p>
+        <div id="webhook-url"></div>
+        <div class="webhook-buttons">
+          <button id="copy-webhook-btn" class="btn">Copy URL</button>
+          <a
+            id="goto-jellyfin-btn"
+            class="btn"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Go to Jellyfin Webhooks</a
+          >
+        </div>
+      </div>
+
+      <a href="/logout">Logout</a>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const params = new URLSearchParams(window.location.search);
+        const guildId = params.get("guild_id");
+
+        if (!guildId) {
+          document.getElementById("guild-name").textContent =
+            "Error: No server specified. Please use /setup in Discord.";
+          return;
+        }
+
+        const response = await fetch(`/api/config?guild_id=${guildId}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          document.getElementById("guild-name").textContent = `Error: ${
+            errorData.error || "Could not load config."
+          }`;
+          document.getElementById("config-form").style.display = "none";
+          return;
+        }
+
+        const { guildName, config } = await response.json();
+        document.getElementById(
+          "guild-name"
+        ).textContent = `Dashboard for ${guildName}`;
+
+        // Populate form with existing data
+        document.getElementById("jellyseer_url").value =
+          config.jellyseer_url || "";
+        document.getElementById("jellyseer_api_key").value =
+          config.jellyseer_api_key || "";
+        document.getElementById("jellyfin_server_url").value =
+          config.jellyfin_server_url || "";
+        document.getElementById("notification_channel_id").value =
+          config.notification_channel_id || "";
+        document.getElementById("color_search").value =
+          config.color_search || "#ef9f76";
+        document.getElementById("color_success").value =
+          config.color_success || "#a6d189";
+        document.getElementById("color_notification").value =
+          config.color_notification || "#cba6f7";
+        document.getElementById("ephemeral_responses").checked =
+          !!config.ephemeral_responses;
+      });
+
+      document
+        .getElementById("config-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const params = new URLSearchParams(window.location.search);
+          const guildId = params.get("guild_id");
+          if (!guildId) return;
+
+          const formData = new FormData(e.target);
+          const data = Object.fromEntries(formData.entries());
+          data.guild_id = guildId;
+          data.ephemeral_responses = document.getElementById(
+            "ephemeral_responses"
+          ).checked
+            ? 1
+            : 0;
+
+          const response = await fetch("/api/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+          const statusEl = document.getElementById("save-status");
+          statusEl.textContent = result.message;
+          statusEl.style.color = result.success ? "lime" : "red";
+          setTimeout(() => (statusEl.textContent = ""), 3000);
+
+          if (result.success) {
+            const webhookSection = document.getElementById("webhook-section");
+            const webhookUrlEl = document.getElementById("webhook-url");
+            const gotoJellyfinBtn =
+              document.getElementById("goto-jellyfin-btn");
+            const jellyfinUrl = document.getElementById(
+              "jellyfin_server_url"
+            ).value;
+            const publicBotUrl = window.location.origin;
+            const finalWebhookUrl = `${publicBotUrl}/jellyfin-webhook/${guildId}`;
+
+            webhookUrlEl.textContent = finalWebhookUrl;
+            if (jellyfinUrl) {
+              gotoJellyfinBtn.href = `${jellyfinUrl.replace(
+                /\/$/,
+                ""
+              )}/web/index.html#!/plugins.html?name=Webhooks`;
+              gotoJellyfinBtn.style.display = "inline-block";
+            } else {
+              gotoJellyfinBtn.style.display = "none";
+            }
+            webhookSection.style.display = "block";
+          }
+        });
+
+      document
+        .getElementById("copy-webhook-btn")
+        .addEventListener("click", () => {
+          const urlToCopy = document.getElementById("webhook-url").textContent;
+          navigator.clipboard.writeText(urlToCopy).then(() => {
+            const btn = document.getElementById("copy-webhook-btn");
+            const originalText = btn.textContent;
+            btn.textContent = "Copied!";
+            setTimeout(() => (btn.textContent = originalText), 2000);
+          });
+        });
+    </script>
+  </body>
+</html>
