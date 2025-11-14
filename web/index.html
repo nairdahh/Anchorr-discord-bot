@@ -1,25 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <title>Anchorr - Discord Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anchorr - Your Self-Hosted Media Bridge</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div class="container">
-      <h1>Anchorr</h1>
-      <p>
-        The ultimate companion for your Jellyfin & Jellyseerr setup, right
-        within Discord.
-      </p>
-      <div class="buttons">
-        <a
-          href="https://discord.com/api/oauth2/authorize?client_id=1425905630023127141&permissions=3264&scope=bot%20applications.commands"
-          class="btn btn-primary"
-          >Add to Discord</a
-        >
-        <a href="/dashboard" class="btn">Go to Dashboard</a>
-      </div>
+    <link rel="stylesheet" href="/libs/coloris/coloris.css"/>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+</head>
+<body>
+    <div class="content-wrapper">
+        <nav class="navbar">
+            <div class="container">
+                <a href="#" class="navbar-brand">
+                    <img src="./assets/logo-text.png" alt="Anchorr Logo" class="logo"/>
+                </a>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#setup">Setup</a></li>
+                    <li><a href="discord-bot.html" class="nav-highlight">Public Bot</a></li>
+                    <li><a href="https://github.com/nairdahh/Anchorr" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <header class="hero">
+            <div class="container">
+                <div class="hero-aurora"></div>
+                <div class="page-content">
+                    <div class="hero-content">
+                        <h1 class="hero-title">The Missing Bridge for your Jellyfin server</h1>
+                        <p class="hero-subtitle">Anchorr connects Discord directly with Jellyfin and Jellyseerr, empowering your community with seamless media requests and real-time notifications.</p>
+                        <a href="https://github.com/nairdahh/Anchorr" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Get Started</a>
+                        <a href="#setup" class="btn btn-secondary">View Setup Guide</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="page-content" style="flex-grow: 1;">
+            <section id="features" class="features-section">
+                <div class="container">
+                    <h2 class="section-title">Why Choose Anchorr?</h2>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <i class="bi bi-robot feature-icon"></i>
+                            <h3 class="feature-title">Discord Integration</h3>
+                            <p class="feature-description">Manage media requests and server notifications directly from Discord with intuitive slash commands.</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="bi bi-film feature-icon"></i>
+                            <h3 class="feature-title">Jellyfin & Jellyseerr</h3>
+                            <p class="feature-description">Deep integration with Jellyfin for real-time notifications and Jellyseerr for handling media requests.</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="bi bi-code-slash feature-icon"></i>
+                            <h3 class="feature-title">Self-Hosted & Open Source</h3>
+                            <p class="feature-description">Take full control of your data. Host Anchorr on your own infrastructure and customize it to your needs.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="setup" class="setup-section">
+                <div class="container">
+                    <h2 class="section-title">Quick Start Guide</h2>
+                    <div class="setup-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h3>Clone the Repository</h3>
+                                <p>Get the source code from GitHub.</p>
+                                <code class="code-block">git clone https://github.com/nairdahh/Anchorr.git</code>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h3>Configure Your Environment</h3>
+                                <p>Create a <code>.env</code> file from the example and fill in your API keys and server details.</p>
+                                <code class="code-block">cp .env.example .env</code>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h3>Run with Docker</h3>
+                                <p>Use Docker Compose to build and run the application in a container.</p>
+                                <code class="code-block">docker compose up -d --build</code>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h3>Set Up Webhooks</h3>
+                                <p>Add the webhook URL to your Jellyfin server for real-time notifications.</p>
+                                <code class="code-block">http://&lt;your-host-ip&gt;:&lt;WEBHOOK_PORT&gt;/jellyfin-webhook</code>
+                            </div>
+                        </div>
+                        <div class="step step-info">
+                            <div class="step-icon"><i class="bi bi-info-lg"></i></div>
+                            <div class="step-content">
+                                <p>For a fully detailed guide, including non-Docker setup and advanced configuration, please visit the <a href="https://github.com/nairdahh/Anchorr" target="_blank" rel="noopener noreferrer">GitHub page</a>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <section class="cta-section">
+            <div class="container">
+                <div class="hero-aurora"></div>
+                <div class="cta-content">
+                    <h2 class="cta-title">Prefer a Zero-Setup Solution?</h2>
+                    <p class="cta-text">A public, hosted version of Anchorr is also available. Add it directly to your Discord server with one click-no self-hosting required.</p>
+                    <a href="discord-bot.html" class="btn btn-primary">Invite the Public Bot</a>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-links">
+                    <a href="https://github.com/nairdahh/Anchorr" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    <a href="https://github.com/nairdahh/Anchorr/issues" target="_blank" rel="noopener noreferrer">Report a Bug</a>
+                </div>
+            </div>
+        </footer>
     </div>
-  </body>
+
+    <script src="/libs/coloris/coloris.min.js"></script>
+    <script>
+      // Initialize Coloris globally on page load
+      document.addEventListener("DOMContentLoaded", () => {
+        Coloris({
+          el: '[data-coloris]',
+          theme: 'large',
+          themeMode: 'dark',
+          format: 'hex',
+          swatches: [
+            '#cba6f7', // Mauve
+            '#89b4fa', // Blue
+            '#a6e3a1', // Green
+            '#ef9f76', // Peach
+            '#f38ba8', // Red
+            '#f9e2af', // Yellow
+          ]
+        });
+      });
+    </script>
+
+</body>
 </html>

@@ -2,200 +2,475 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Anchorr - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css" />
-    <style>
-      #webhook-section {
-        display: none;
-        margin-top: 2rem;
-        padding: 1.5rem;
-        background-color: var(--background);
-        border: 1px solid var(--code-bg);
-        border-radius: 8px;
-      }
-      #webhook-url {
-        background-color: var(--code-bg);
-        padding: 0.5rem;
-        border-radius: 4px;
-        word-wrap: break-word;
-        margin-bottom: 1rem;
-      }
-      .webhook-buttons {
-        display: flex;
-        gap: 1rem;
-      }
-      .color-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 1rem;
-        margin-top: 1rem;
-      }
-      .checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-top: 1rem;
-      }
-    </style>
+    <link rel="stylesheet" href="/libs/coloris/coloris.css"/>
+    <link rel="icon" href="assets/logo.png" type="image/png">
   </head>
   <body>
-    <div class="container dashboard">
-      <h1 id="guild-name">Loading...</h1>
-      <form id="config-form">
-        <h2>Jellyseerr Settings</h2>
-        <label for="jellyseer_url">Jellyseerr URL (with /api/v1)</label>
-        <input type="text" id="jellyseer_url" name="jellyseer_url" required />
-        <label for="jellyseer_api_key">Jellyseerr API Key</label>
-        <input
-          type="password"
-          id="jellyseer_api_key"
-          name="jellyseer_api_key"
-          required
-        />
-
-        <h2>Jellyfin Notifications</h2>
-        <label for="jellyfin_server_url">Public Jellyfin URL</label>
-        <input
-          type="text"
-          id="jellyfin_server_url"
-          name="jellyfin_server_url"
-        />
-        <label for="notification_channel_id">Notification Channel ID</label>
-        <input
-          type="text"
-          id="notification_channel_id"
-          name="notification_channel_id"
-        />
-
-        <h2>Appearance & Behavior</h2>
-        <label for="ephemeral_responses" class="checkbox-label">
-          <input
-            type="checkbox"
-            id="ephemeral_responses"
-            name="ephemeral_responses"
-          />
-          Make command responses visible only to me (ephemeral)
-        </label>
-        <div class="color-grid">
-          <div>
-            <label for="color_search">Search Color</label>
-            <input
-              type="color"
-              id="color_search"
-              name="color_search"
-              value="#ef9f76"
-            />
+    <div class="content-wrapper">
+      <nav class="navbar">
+          <div class="container">
+              <a href="index.html" class="navbar-brand">
+                  <img src="./assets/logo-text.png" alt="Anchorr Logo" class="logo"/>
+              </a>
+              <ul class="nav-links">
+                  <li><a href="index.html#features">Features</a></li>
+                  <li><a href="index.html#setup">Setup</a></li>
+                  <li><a href="discord-bot.html" class="nav-highlight">Public Bot</a></li>
+                  <li><a href="https://github.com/nairdahh/Anchorr" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+              </ul>
           </div>
-          <div>
-            <label for="color_success">Success Color</label>
-            <input
-              type="color"
-              id="color_success"
-              name="color_success"
-              value="#a6d189"
-            />
-          </div>
-          <div>
-            <label for="color_notification">Notification Color</label>
-            <input
-              type="color"
-              id="color_notification"
-              name="color_notification"
-              value="#cba6f7"
-            />
+      </nav>
+
+      <main class="page-content" style="padding-top: 8rem; padding-bottom: 5rem;">
+        <!-- Login View -->
+        <div id="login-view" class="container text-center">
+          <h1 class="hero-title" style="font-size: 3rem;">Anchorr Dashboard</h1>
+          <p class="hero-subtitle">Please log in with Discord to manage your servers.</p>
+          <a href="/login" class="btn btn-primary">
+            <i class="bi bi-discord"></i> Login with Discord
+          </a>
+        </div>
+
+        <!-- Loading View -->
+        <div id="loading-view" class="container text-center" style="display: none;">
+          <div class="spinner"></div>
+          <p class="hero-subtitle" style="margin-top: 1.5rem;">Checking authentication...</p>
+        </div>
+
+        <!-- Server Selection View -->
+        <div id="server-selection-view" class="container" style="display: none;">
+          <h2 class="section-title">Select a Server</h2>
+          <div id="server-list" class="server-list" style="max-width: 700px; margin: 0 auto;">
+            <!-- Server list will be populated by JavaScript -->
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">
-          Save Configuration
-        </button>
-      </form>
-      <p id="save-status"></p>
+        <!-- Dashboard/Config View -->
+        <div id="dashboard-view" class="container" style="display: none;">
+          <div class="dashboard-container">
+            <div class="dashboard-header">
+              <h1 id="guild-name" class="dashboard-title"></h1>
+              <a href="/logout" class="btn btn-danger-outline">Logout</a>
+            </div>
 
-      <div id="webhook-section">
-        <h3>Your Jellyfin Webhook URL</h3>
-        <p>
-          To receive notifications, add the following URL to your Jellyfin
-          Webhooks plugin:
-        </p>
-        <div id="webhook-url"></div>
-        <div class="webhook-buttons">
-          <button id="copy-webhook-btn" class="btn">Copy URL</button>
-          <a
-            id="goto-jellyfin-btn"
-            class="btn"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Go to Jellyfin Webhooks</a
-          >
+            <div class="dashboard-layout">
+              <nav class="dashboard-nav">
+                <a href="#" class="nav-item active" data-target="jellyseerr">Jellyseerr</a>
+                <a href="#" class="nav-item" data-target="notifications">Notifications</a>
+                <a href="#" class="nav-item" data-target="appearance">Appearance</a>
+              </nav>
+              <div class="dashboard-content">
+                <form id="config-form">
+                  <div id="config-pane-jellyseerr" class="config-pane active">
+                    <fieldset>
+                      <legend>Jellyseerr Settings</legend>
+                      <div class="form-group">
+                        <label for="jellyseer_url">Jellyseerr URL</label>
+                        <input type="text" id="jellyseer_url" name="jellyseer_url" required placeholder="http://localhost:5055" />
+                        <div class="form-text">The full URL of your Jellyseerr instance.</div>
+                      </div>
+                      <div class="form-group">
+                        <label for="jellyseer_api_key">Jellyseerr API Key</label>
+                        <input type="password" id="jellyseer_api_key" name="jellyseer_api_key" required />
+                      </div>
+                      <div class="form-group">
+                        <button type="button" id="test-jellyseerr-btn" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Test Connection</button>
+                        <span id="test-jellyseerr-status" style="margin-left: 1rem;"></span>
+                      </div>
+                    </fieldset>
+                  </div>
+
+                  <div id="config-pane-notifications" class="config-pane">
+                    <fieldset>
+                      <legend>Jellyfin Notifications</legend>
+                      <div class="form-group">
+                        <label for="jellyfin_server_url">Public Jellyfin URL</label>
+                        <input type="text" id="jellyfin_server_url" name="jellyfin_server_url" placeholder="http://jellyfin.example.com" />
+                        <div class="form-text">Used for "Watch Now" and "Go to Jellyfin" buttons.</div>
+                      </div>
+                      <div class="form-group">
+                        <button type="button" id="test-jellyfin-btn" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Test Connection</button>
+                        <span id="test-jellyfin-status" style="margin-left: 1rem;"></span>
+                      </div>
+                      <div class="form-group">
+                        <label for="notification_channel_id">Notification Channel ID</label>
+                        <input type="text" id="notification_channel_id" name="notification_channel_id" />
+                        <div class="form-text">The Discord channel ID where new media notifications will be sent.</div>
+                      </div>
+                    </fieldset>
+                  </div>
+
+                  <div id="config-pane-appearance" class="config-pane">
+                    <fieldset>
+                      <legend>Appearance & Behavior</legend>
+                      <div class="form-group switch-group">
+                        <label for="ephemeral_responses">Make command responses visible only to me</label>
+                        <label class="switch">
+                          <input type="checkbox" id="ephemeral_responses" name="ephemeral_responses" />
+                          <span class="slider"></span>
+                        </label>
+                      </div>
+                      <div class="form-group" style="display: flex; gap: 2rem;">
+                        <div>
+                          <label>Search Color</label>
+                          <input type="text" id="color_search" name="color_search" data-coloris>
+                        </div>
+                        <div>
+                          <label>Success Color</label>
+                          <input type="text" id="color_success" name="color_success" data-coloris>
+                        </div>
+                        <div>
+                          <label>Notification Color</label>
+                          <input type="text" id="color_notification" name="color_notification" data-coloris>
+                        </div>
+                      </div>
+                    </fieldset>
+                  </div>
+
+                </form>
+              </div>
+            </div>
+
+            <div id="webhook-section" class="step step-info" style="display: none; margin-top: 3rem;">
+              <div class="step-icon"><i class="bi bi-link-45deg"></i></div>
+              <div class="step-content">
+                  <h3>Your Jellyfin Webhook URL</h3>
+                  <p>To receive notifications, add the following URL to your Jellyfin Webhooks plugin settings:</p>
+                  <code id="webhook-url" class="code-block"></code>
+                  <div style="margin-top: 1rem;">
+                    <button id="copy-webhook-btn" class="btn btn-secondary" style="padding: 0.5rem 1rem;">
+                      Copy URL
+                    </button>
+                    <a
+                      id="goto-jellyfin-btn"
+                      class="btn btn-secondary"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style="padding: 0.5rem 1rem;"
+                      >Go to Jellyfin Webhooks</a
+                    >
+                  </div>
+              </div>
+            </div>
+
+            <div class="dashboard-actions">
+            <button id="back-to-servers-btn" class="btn btn-subtle">
+              <i class="bi bi-arrow-left"></i> Back to Server Selection
+            </button>
+              <div id="save-status" style="flex-grow: 1; text-align: right; padding-right: 1rem;"></div>
+              <button type="submit" form="config-form" class="btn btn-primary">
+                Save Configuration
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
 
-      <a href="/logout">Logout</a>
+      <footer class="footer">
+          <div class="container">
+              <div class="footer-links">
+                  <a href="https://github.com/nairdahh/Anchorr" target="_blank" rel="noopener noreferrer">GitHub</a>
+                  <a href="https://github.com/nairdahh/Anchorr/issues" target="_blank" rel="noopener noreferrer">Report a Bug</a>
+              </div>
+          </div>
+      </footer>
     </div>
 
+    <script src="/libs/coloris/coloris.min.js"></script>
+
     <script>
-      document.addEventListener("DOMContentLoaded", async () => {
-        const params = new URLSearchParams(window.location.search);
-        const guildId = params.get("guild_id");
+      // Views
+      const loginView = document.getElementById("login-view");
+      const loadingView = document.getElementById("loading-view");
+      const serverSelectionView = document.getElementById("server-selection-view");
+      const dashboardView = document.getElementById("dashboard-view");
 
-        if (!guildId) {
-          document.getElementById("guild-name").textContent =
-            "Error: No server specified. Please use /setup in Discord.";
+      // Elements
+      const guildNameEl = document.getElementById("guild-name");
+      const configFormEl = document.getElementById("config-form");
+      const serverListEl = document.getElementById("server-list");
+      let currentGuildId = null;
+
+      /**
+       * Fetches config for a given guildId and populates the form.
+       */
+      async function loadDashboardForGuild(guildId) {
+        currentGuildId = guildId;
+        try {
+          const response = await fetch(`/api/config?guild_id=${guildId}`);
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Could not load configuration.");
+          }
+
+          const { guildName, config } = await response.json();
+
+          // Store config in sessionStorage to retrieve after page refresh
+          sessionStorage.setItem('dashboardConfig', JSON.stringify({
+            guildId,
+            guildName,
+            config
+          }));
+
+          // Force a page refresh to ensure Coloris initializes correctly
+          window.location.reload();
+
+        } catch (error) {
+          alert(`Error loading dashboard: ${error.message}`);
+          // Potentially redirect to login or show an error message
+        }
+      }
+
+      /**
+       * Initializes a vanilla-picker instance on an element.
+       *
+       * Hides the dashboard and shows the server selection screen.
+       */
+      function showServerSelection() {
+        // Reload the page to re-trigger the server list fetching logic
+        window.location.href = '/dashboard.html';
+      }
+
+      /**
+       * Checks user's auth status and loads guilds or shows login.
+       */
+      async function checkAuthAndLoad() {
+        // Check if there's a config stored in sessionStorage from a previous load
+        const storedConfig = sessionStorage.getItem('dashboardConfig');
+        if (storedConfig) {
+          const { guildId, guildName, config } = JSON.parse(storedConfig);
+          sessionStorage.removeItem('dashboardConfig'); // Clear it so we don't use it again
+
+          currentGuildId = guildId;
+          guildNameEl.textContent = `Dashboard for ${guildName}`;
+
+          // Populate form with existing data
+          configFormEl.jellyseer_url.value = config.jellyseer_url || "";
+          configFormEl.jellyseer_api_key.value = config.jellyseer_api_key || "";
+          configFormEl.jellyfin_server_url.value = config.jellyfin_server_url || "";
+          configFormEl.notification_channel_id.value = config.notification_channel_id || "";
+
+          // Initialize Color Pickers
+          document.getElementById('color_search').value = config.color_search || '#ef9f76';
+          document.getElementById('color_success').value = config.color_success || '#a6d189';
+          document.getElementById('color_notification').value = config.color_notification || '#cba6f7';
+
+          configFormEl.ephemeral_responses.checked = !!config.ephemeral_responses;
+
+          // Hide other views and show dashboard
+          loginView.style.display = "none";
+          serverSelectionView.style.display = "none";
+          dashboardView.style.display = "block";
+
+          // Reinitialize Coloris after values are set to update button colors
+          setTimeout(() => {
+            initColoris();
+          }, 50);
           return;
         }
 
-        const response = await fetch(`/api/config?guild_id=${guildId}`);
-        if (!response.ok) {
-          const errorData = await response.json();
-          document.getElementById("guild-name").textContent = `Error: ${
-            errorData.error || "Could not load config."
-          }`;
-          document.getElementById("config-form").style.display = "none";
-          return;
+        // Check if URL has a guild_id param from the /setup command flow
+        const urlParams = new URLSearchParams(window.location.search);
+        const directGuildId = urlParams.get('guild_id');
+
+        // Clean the URL so it doesn't stick around on reloads
+        if (directGuildId) {
+            window.history.replaceState({}, document.title, "/dashboard.html");
         }
 
-        const { guildName, config } = await response.json();
-        document.getElementById(
-          "guild-name"
-        ).textContent = `Dashboard for ${guildName}`;
+        // Show loading spinner
+        loginView.style.display = 'none';
+        serverSelectionView.style.display = 'none';
+        loadingView.style.display = 'block';
 
-        // Populate form with existing data
-        document.getElementById("jellyseer_url").value =
-          config.jellyseer_url || "";
-        document.getElementById("jellyseer_api_key").value =
-          config.jellyseer_api_key || "";
-        document.getElementById("jellyfin_server_url").value =
-          config.jellyfin_server_url || "";
-        document.getElementById("notification_channel_id").value =
-          config.notification_channel_id || "";
-        document.getElementById("color_search").value =
-          config.color_search || "#ef9f76";
-        document.getElementById("color_success").value =
-          config.color_success || "#a6d189";
-        document.getElementById("color_notification").value =
-          config.color_notification || "#cba6f7";
-        document.getElementById("ephemeral_responses").checked =
-          !!config.ephemeral_responses;
+        // Now, check the session
+        try {
+          // This endpoint should be created on the backend.
+          // It checks for a valid session cookie/token.
+          // If logged in, it returns user info and a list of manageable guilds.
+          // If not, it returns a 401 Unauthorized.
+          const response = await fetch('/api/session');
+
+          if (!response.ok) {
+            // Not logged in, show the login view
+            loadingView.style.display = 'none';
+            dashboardView.style.display = 'none';
+            return;
+          }
+
+          const { user, guilds, bot_id } = await response.json();
+
+          // If we came here with a specific guild_id, load it directly
+          if (directGuildId && guilds.some(g => g.id === directGuildId && g.bot_in_server)) {
+            loadDashboardForGuild(directGuildId);
+            return;
+          }
+
+          // Logged in, show server selection
+          const serversWithBot = guilds.filter(g => g.bot_in_server);
+          serverListEl.innerHTML = ''; // Clear previous list
+
+          if (serversWithBot.length > 0) {
+            serversWithBot.forEach(guild => {
+              const guildElement = document.createElement('div');
+              guildElement.className = 'server-list-item clickable';
+              guildElement.dataset.guildId = guild.id;
+
+              guildElement.innerHTML = `
+                  <img src="${guild.icon_url}" class="server-icon" alt="${guild.name} icon">
+                  <span class="server-name">${guild.name}</span>
+                  <button class="btn btn-secondary" style="margin-left: auto; padding: 0.5rem 1rem;">Configure</button>
+              `;
+
+              guildElement.addEventListener('click', () => loadDashboardForGuild(guild.id));
+              serverListEl.appendChild(guildElement);
+            });
+
+            loadingView.style.display = 'none';
+            serverSelectionView.style.display = 'block';
+          } else {
+            // Logged in but no manageable servers found
+            loadingView.style.display = 'none';
+            serverListEl.innerHTML = '<p style="text-align: center; opacity: 0.8;">No servers found with Anchorr installed where you have administrative permissions. Please invite the bot to a server first.</p>';
+            serverSelectionView.style.display = 'block';
+          }
+
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          // Fallback to login view on any error
+          loginView.style.display = 'block';
+        }
+
+        loadingView.style.display = 'none';
+      }
+
+      // --- EVENT LISTENERS ---
+
+      // Function to initialize Coloris
+      function initColoris() {
+        Coloris({
+          el: '[data-coloris]',
+          theme: 'large',
+          themeMode: 'dark',
+          format: 'hex',
+          swatches: [
+            '#cba6f7', // Mauve
+            '#89b4fa', // Blue
+            '#a6e3a1', // Green
+            '#ef9f76', // Peach
+            '#f38ba8', // Red
+            '#f9e2af', // Yellow
+          ]
+        });
+      }
+
+      // On page load, start the authentication check first
+      document.addEventListener("DOMContentLoaded", () => {
+        // Initialize Coloris and then start auth check
+        initColoris();
+        // Then, immediately start the authentication check.
+        checkAuthAndLoad();
       });
 
-      document
-        .getElementById("config-form")
-        .addEventListener("submit", async (e) => {
+      // Handle "Test Connection" for Jellyseerr
+      document.getElementById('test-jellyseerr-btn').addEventListener('click', async () => {
+        const url = document.getElementById('jellyseer_url').value;
+        const apiKey = document.getElementById('jellyseer_api_key').value;
+        const statusEl = document.getElementById('test-jellyseerr-status');
+
+        if (!url || !apiKey) {
+          statusEl.textContent = 'URL and API Key are required.';
+          statusEl.style.color = '#f38ba8';
+          return;
+        }
+
+        statusEl.textContent = 'Testing...';
+        statusEl.style.color = 'var(--blue)';
+
+        try {
+          const response = await fetch('/api/test-connection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'jellyseerr', url, apiKey }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.message);
+
+          statusEl.textContent = `Success! (${result.message})`;
+          statusEl.style.color = 'var(--green)';
+        } catch (error) {
+          statusEl.textContent = `Failed: ${error.message}`;
+          statusEl.style.color = '#f38ba8';
+        }
+      });
+
+      // Handle "Test Connection" for Jellyfin
+      document.getElementById('test-jellyfin-btn').addEventListener('click', async () => {
+        const url = document.getElementById('jellyfin_server_url').value;
+        const statusEl = document.getElementById('test-jellyfin-status');
+        if (!url) {
+          statusEl.textContent = 'URL is required.';
+          statusEl.style.color = '#f38ba8';
+          return;
+        }
+        statusEl.textContent = 'Testing...';
+        statusEl.style.color = 'var(--blue)';
+        try {
+          const response = await fetch('/api/test-connection', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'jellyfin', url }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.message);
+          statusEl.textContent = `Success! (${result.message})`;
+          statusEl.style.color = 'var(--green)';
+        } catch (error) {
+          statusEl.textContent = `Failed: ${error.message}`;
+          statusEl.style.color = '#f38ba8';
+        }
+      });
+
+      // Handle "Back to Server Selection" button
+      document.getElementById('back-to-servers-btn').addEventListener('click', showServerSelection);
+
+      // Handle dashboard navigation
+      document.querySelector('.dashboard-nav').addEventListener('click', (e) => {
+        if (e.target.classList.contains('nav-item')) {
           e.preventDefault();
-          const params = new URLSearchParams(window.location.search);
-          const guildId = params.get("guild_id");
-          if (!guildId) return;
+          const targetId = e.target.dataset.target;
 
-          const formData = new FormData(e.target);
-          const data = Object.fromEntries(formData.entries());
-          data.guild_id = guildId;
-          data.ephemeral_responses = document.getElementById(
-            "ephemeral_responses"
-          ).checked
-            ? 1
-            : 0;
+          // Update active link
+          document.querySelectorAll('.dashboard-nav .nav-item').forEach(item => item.classList.remove('active'));
+          e.target.classList.add('active');
 
+          // Update active pane
+          document.querySelectorAll('.config-pane').forEach(pane => {
+            pane.classList.remove('active');
+            if (pane.id === `config-pane-${targetId}`) pane.classList.add('active');
+          });
+        }
+      });
+
+      // Handle form submission
+      configFormEl.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!currentGuildId) return;
+
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        data.guild_id = currentGuildId;
+        data.ephemeral_responses = configFormEl.ephemeral_responses.checked ? 1 : 0;
+
+        const statusEl = document.getElementById("save-status");
+        statusEl.textContent = "Saving...";
+        statusEl.style.color = "var(--blue)";
+
+        try {
           const response = await fetch("/api/config", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -203,45 +478,50 @@
           });
 
           const result = await response.json();
-          const statusEl = document.getElementById("save-status");
+          if (!response.ok) throw new Error(result.message || "Save failed");
+
           statusEl.textContent = result.message;
-          statusEl.style.color = result.success ? "lime" : "red";
-          setTimeout(() => (statusEl.textContent = ""), 3000);
+          statusEl.style.color = "var(--green)";
 
-          if (result.success) {
-            const webhookSection = document.getElementById("webhook-section");
-            const webhookUrlEl = document.getElementById("webhook-url");
-            const gotoJellyfinBtn =
-              document.getElementById("goto-jellyfin-btn");
-            const jellyfinUrl = document.getElementById(
-              "jellyfin_server_url"
-            ).value;
-            const publicBotUrl = window.location.origin;
-            const finalWebhookUrl = `${publicBotUrl}/jellyfin-webhook/${guildId}`;
+          // Show webhook section
+          const webhookSection = document.getElementById("webhook-section");
+          const webhookUrlEl = document.getElementById("webhook-url");
+          const gotoJellyfinBtn = document.getElementById("goto-jellyfin-btn");
+          const jellyfinUrl = configFormEl.jellyfin_server_url.value;
+          const publicBotUrl = window.location.origin;
+          const finalWebhookUrl = `${publicBotUrl}/jellyfin-webhook/${currentGuildId}`;
 
-            webhookUrlEl.textContent = finalWebhookUrl;
-            if (jellyfinUrl) {
-              gotoJellyfinBtn.href = `${jellyfinUrl.replace(
-                /\/$/,
-                ""
-              )}/web/index.html#!/plugins.html?name=Webhooks`;
-              gotoJellyfinBtn.style.display = "inline-block";
-            } else {
-              gotoJellyfinBtn.style.display = "none";
-            }
-            webhookSection.style.display = "block";
+          webhookUrlEl.textContent = finalWebhookUrl;
+          if (jellyfinUrl) {
+            gotoJellyfinBtn.href = `${jellyfinUrl.replace(/\/$/,"")}/web/index.html#/configurationpage?name=Webhook`;
+            gotoJellyfinBtn.style.display = "inline-block";
+          } else {
+            gotoJellyfinBtn.style.display = "none";
           }
-        });
+          webhookSection.style.display = "block";
+        } catch (error) {
+          statusEl.textContent = `Error: ${error.message}`;
+          statusEl.style.color = "#f38ba8"; // Catppuccin Red
+        } finally {
+          setTimeout(() => (statusEl.textContent = ""), 5000);
+        }
+      });
 
       document
         .getElementById("copy-webhook-btn")
-        .addEventListener("click", () => {
+        .addEventListener("click", (e) => {
           const urlToCopy = document.getElementById("webhook-url").textContent;
           navigator.clipboard.writeText(urlToCopy).then(() => {
-            const btn = document.getElementById("copy-webhook-btn");
-            const originalText = btn.textContent;
-            btn.textContent = "Copied!";
-            setTimeout(() => (btn.textContent = originalText), 2000);
+            const btn = e.target;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+            btn.classList.add('copied');
+            btn.disabled = true;
+            setTimeout(() => {
+              btn.innerHTML = originalContent;
+              btn.disabled = false;
+              btn.classList.remove('copied');
+            }, 2000);
           });
         });
     </script>

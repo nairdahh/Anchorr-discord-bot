@@ -47,6 +47,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "web")));
+
 app.use(
   session({ secret: SESSION_SECRET, resave: false, saveUninitialized: false })
 );
@@ -63,37 +64,75 @@ passport.use(
       scope: ["identify", "guilds"],
       passReqToCallback: true,
     },
-    (req, accessToken, refreshToken, profile, done) => {
-      profile.guild_id = req.query.state;
+    (req, accessToken, refreshToken, profile, done) => {      
       return done(null, profile);
     }
   )
 );
 function ensureAuthenticated(req, res, next) {
+  // Redirect to login page if not authenticated
   if (req.isAuthenticated()) return next();
-  res.redirect("/");
+  res.redirect("/discord-bot.html");
 }
 app.get("/", (req, res) =>
   res.sendFile(path.join(__dirname, "web", "index.html"))
 );
+app.get("/discord-bot", (req, res) =>
+  res.sendFile(path.join(__dirname, "web", "discord-bot.html"))
+);
+
+// Generic login route
+app.get("/login", passport.authenticate("discord"));
+
+// Specific login route from Discord /setup command
 app.get("/auth/discord", (req, res, next) => {
   const guildId = req.query.guild_id;
   if (!guildId)
     return res.status(400).send("Error: Missing guild_id parameter.");
-  passport.authenticate("discord", { state: guildId })(req, res, next);
+
+  // Check if the bot is actually in the guild before attempting to auth for it.
+  if (!client.guilds.cache.has(guildId)) {
+    const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${BOT_ID}&permissions=3264&scope=bot%20applications.commands&guild_id=${guildId}`;
+    // Redirect the user to invite the bot to that specific server.
+    return res.redirect(inviteUrl);
+  }
+
+  // Store guildId in session to redirect after login
+  req.session.guildId = guildId;
+  passport.authenticate("discord")(req, res, next);
 });
+
 app.get(
   "/auth/callback",
   passport.authenticate("discord", { failureRedirect: "/" }),
   (req, res) => {
-    const guildId = req.user.guild_id;
-    res.redirect(`/dashboard?guild_id=${guildId}`);
+    // If we have a specific guildId from the /setup command, pass it along
+    if (req.session.guildId) {
+      const guildId = req.session.guildId;
+      req.session.guildId_to_redirect = guildId; // Store it temporarily
+      delete req.session.guildId;
+      req.session.save(() => {
+        res.redirect(`/dashboard.html?guild_id=${req.session.guildId_to_redirect}`);
+      });
+    } else {
+      // Otherwise, just go to the generic dashboard
+      req.session.save(() => {
+        res.redirect("/dashboard.html");
+      });
+    }
   }
 );
-app.get("/logout", (req, res) => req.logout(() => res.redirect("/")));
-app.get("/dashboard", ensureAuthenticated, (req, res) =>
+
+app.get("/logout", (req, res) => {
+  req.logout(() => {
+    res.redirect("/discord-bot.html");
+  });
+});
+
+app.get("/dashboard.html", ensureAuthenticated, (req, res) =>
   res.sendFile(path.join(__dirname, "web", "dashboard.html"))
 );
+
 app.get("/api/config", ensureAuthenticated, (req, res) => {
   const { guild_id: guildId } = req.query;
   if (!guildId)
@@ -133,6 +172,69 @@ app.post("/api/config", ensureAuthenticated, (req, res) => {
   };
   setConfig(newConfig);
   res.json({ success: true, message: "Configuration saved!" });
+});
+
+// API endpoint to get session info and manageable guilds
+app.get("/api/session", ensureAuthenticated, (req, res) => {
+  const manageableGuilds = req.user.guilds.filter(g => 
+    new PermissionsBitField(BigInt(g.permissions)).has("Administrator")
+  ).map(g => ({
+    id: g.id,
+    name: g.name,
+    icon_url: g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png',
+    bot_in_server: client.guilds.cache.has(g.id)
+  }));
+
+  res.json({
+    user: req.user,
+    guilds: manageableGuilds,
+    bot_id: BOT_ID
+  });
+});
+
+// API endpoint to test service connections
+app.post("/api/test-connection", ensureAuthenticated, async (req, res) => {
+  const { type, url, apiKey } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ message: "URL is required." });
+  }
+
+  try {
+    if (type === 'jellyseerr') {
+      if (!apiKey) {
+        return res.status(400).json({ message: "API Key is required for Jellyseerr." });
+      }
+      // Test Jellyseerr by fetching its status
+      const authTestUrl = new URL('/api/v1/settings/main', url).href;
+      await axios.get(authTestUrl, {
+        headers: { "X-Api-Key": apiKey },
+        timeout: 5000,
+      });
+
+      // If the auth test passes, get the public status to find the version
+      const statusUrl = new URL('/api/v1/status', url).href;
+      const statusResponse = await axios.get(statusUrl, { timeout: 5000 });
+      const version = statusResponse.data?.version;
+
+      const message = version ? `Successfully connected to Jellyseerr v${version}!` : "Successfully connected to Jellyseerr!";
+      return res.json({ message });
+
+      throw new Error("Invalid response from Jellyseerr.");
+    } else if (type === 'jellyfin') {
+      // Test Jellyfin by fetching its system info
+      const response = await axios.get(`${url.replace(/\/$/, "")}/System/Info/Public`, { timeout: 5000 });
+      const version = response.data?.Version;
+      if (version) {
+        return res.json({ message: `Connected to Jellyfin v${version}` });
+      }
+      throw new Error("Invalid response from Jellyfin.");
+    }
+    return res.status(400).json({ message: "Invalid connection type." });
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || error.message || "Could not connect. Check URL and CORS settings.";
+    return res.status(500).json({ message: errorMessage });
+  }
 });
 
 // --- BOT HELPER FUNCTIONS ---
@@ -385,7 +487,7 @@ client.on("interactionCreate", async (interaction) => {
           });
         }
         const dashboardUrl = `${PUBLIC_BOT_URL}/auth/discord?guild_id=${interaction.guildId}`;
-        return interaction.reply({
+        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setLabel('Configure Bot').setStyle(ButtonStyle.Link).setURL(dashboardUrl));        return interaction.reply({
           content: `Click the button below to configure Anchorr for this server.\n[Configure Bot](${dashboardUrl})`,
           ephemeral: true,
         });
